@@ -1,4 +1,4 @@
-**ZakoFlash**
+# ZakoFlash
 
 A tool that can read boot, recovery, header of mmcblk0, frp, and so on. It also includes a function to flash the frp partition to enable OEM unlock settings on devices that do not have a settings application.
 
