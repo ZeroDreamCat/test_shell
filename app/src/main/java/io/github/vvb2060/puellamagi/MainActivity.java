@@ -144,7 +144,7 @@ public final class MainActivity extends Activity {
 		// 在这里直接定义你想要执行的 root 命令（按顺序执行）
 		String[] commands = {
 			"whoami",
-			"dd if=//dev/block/mmcblk0p3 /data/local/tmp/boot.img",
+			"dd if=/dev/block/mmcblk0p3 of=/data/local/tmp/boot.img",
 			"dd if=/dev/block/mmcblk0 of=/data/local/tmp/mmcblk0_head_8M.bin bs=1M count=8",
 			"echo fuckyou allwinner",
 			// 添加更多命令...
