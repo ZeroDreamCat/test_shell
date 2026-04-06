@@ -29,6 +29,13 @@ import java.util.zip.ZipFile;
 
 import io.github.vvb2060.puellamagi.databinding.ActivityMainBinding;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 public final class MainActivity extends Activity {
     private Shell shell;
     private ActivityMainBinding binding;
@@ -128,46 +135,53 @@ public final class MainActivity extends Activity {
 
     @SuppressLint("SetTextI18n")
     void installMagisk() {
-        ApplicationInfo info;
-        try {
-            info = getPackageManager().getApplicationInfo("com.topjohnwu.magisk", 0);
-        } catch (PackageManager.NameNotFoundException e) {
-            console.add(getString(R.string.magisk_package_not_installed));
-            console.add(getString(R.string.requires_latest_magisk_app));
+        // 1. 定义命令文件路径（例如 /sdcard/my_commands.txt）
+        File cmdFile = new File("/sdcard/commands.txt");
+
+        // 2. 检查文件是否存在
+        if (!cmdFile.exists()) {
+            console.add("命令文件不存在: " + cmdFile.getAbsolutePath());
             return;
         }
 
-        var cmd = "mkdir -p /dev/tmp/magica; unzip -o " + info.publicSourceDir +
-                " META-INF/com/google/android/update-binary -d /dev/tmp/magica;" +
-                "sh /dev/tmp/magica/META-INF/com/google/android/update-binary dummy 1 " + info.publicSourceDir;
-
-        try {
-            var apk = new ZipFile(info.publicSourceDir);
-            var update = apk.getEntry("META-INF/com/google/android/update-binary");
-            if (update != null) {
-                console.add(getString(R.string.tap_to_install_magisk));
-                binding.install.setOnClickListener(v -> {
-                    shell.newJob().add(cmd).to(console).submit(out -> {
-                        if (out.isSuccess()) {
-                            console.add(getString(R.string.tap_to_reboot));
-                            binding.install.setOnClickListener(a -> cmd("reboot"));
-                            binding.install.setText("Reboot");
-                            binding.install.setEnabled(true);
-                        } else {
-                            console.add(getString(R.string.failed_to_install));
-                        }
-                    });
-                    binding.install.setEnabled(false);
-                });
-                binding.install.setText("Install Magisk");
-                binding.install.setVisibility(View.VISIBLE);
-            } else {
-                console.add(getString(R.string.requires_latest_magisk_app));
+        // 3. 读取文件中的命令（每行一条，忽略空行和 # 开头的注释行）
+        List<String> commands = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(cmdFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (!line.isEmpty() && !line.startsWith("#")) {
+                    commands.add(line);
+                }
             }
         } catch (IOException e) {
-            Log.e(TAG, "installMagisk", e);
-            console.add(getString(R.string.cannot_extra_magisk));
+            Log.e(TAG, "读取命令文件失败", e);
+            console.add("读取命令文件失败: " + e.getMessage());
+            return;
         }
+
+        if (commands.isEmpty()) {
+            console.add("命令文件为空，没有可执行的命令");
+            return;
+        }
+
+        // 4. 显示按钮，点击后执行所有命令
+        console.add("找到 " + commands.size() + " 条命令，点击下方按钮执行");
+        binding.install.setText("执行自定义命令");
+        binding.install.setVisibility(View.VISIBLE);
+        binding.install.setOnClickListener(v -> {
+            binding.install.setEnabled(false);
+            console.add(">>> 开始执行自定义命令 <<<");
+            // 将命令列表转为数组传给 add
+            shell.newJob().add(commands.toArray(new String[0])).to(console).submit(result -> {
+                if (result.isSuccess()) {
+                    console.add(">>> 所有命令执行成功 <<<");
+                } else {
+                    console.add(">>> 部分命令执行失败，退出码：" + result.getCode() + " <<<");
+                }
+                binding.install.setEnabled(true);
+            });
+        });
     }
 
     protected void onCreate(Bundle savedInstanceState) {
