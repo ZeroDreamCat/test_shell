@@ -7,7 +7,7 @@ However,you must put your device in SELinux permissive mode.
 **Usage**
 
 1. Download the zip, unzip it, and install the debug version.
-2. After that, click the button. This application will back up your boot partition and the first 8 MB of mmcblk0 to the /sdcard directory.
+2. After that, click the button. This application will back up your boot partition and the first 32 MB of mmcblk0 to the /sdcard directory.
 
 For Allwinner devices, you can analyze your device by using the 32 MB empty header at offset 0x2000, which usually contains the SPL file.
 
