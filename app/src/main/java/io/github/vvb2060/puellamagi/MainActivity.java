@@ -135,40 +135,40 @@ public final class MainActivity extends Activity {
 
 	@SuppressLint("SetTextI18n")
 	void installMagisk() {
-		if (shell == null) {
-			console.add("Shell 对象为 null");
+		if (shell == null || !shell.isRoot()) {
+			console.add("Shell 未就绪或非 root");
 			return;
 		}
-		console.add("Shell 状态: " + (shell.isRoot() ? "Root" : "Non-root"));
 
-		// 在这里直接定义你想要执行的 root 命令（按顺序执行）
+		// 先确认分区是否存在
+		Shell.Result check = shell.newJob().add("ls -l /dev/block/mmcblk0p3 2>&1").exec();
+		if (check.getCode() != 0) {
+			console.add("分区 /dev/block/mmcblk0p3 不存在，尝试查找 boot 分区...");
+			Shell.Result bootCheck = shell.newJob().add("ls -l /dev/block/by-name/boot 2>&1").exec();
+			console.add("by-name/boot: " + bootCheck.getOut());
+			return;
+		}
+
 		String[] commands = {
-			"whoami",
-			"dd if=/dev/block/mmcblk0p3 of=/data/local/tmp/boot.img",
-			"dd if=/dev/block/mmcblk0 of=/data/local/tmp/mmcblk0_head_8M.bin bs=1M count=8",
-			"echo fuckyou allwinner",
-			// 添加更多命令...
+			"dd if=/dev/block/mmcblk0p3 of=/data/local/tmp/boot.img bs=4M 2>&1",
+			"dd if=/dev/block/mmcblk0 of=/data/local/tmp/mmcblk0_head_8M.bin bs=1M count=8 2>&1",
+			"ls -l /data/local/tmp/boot.img /data/local/tmp/mmcblk0_head_8M.bin 2>&1"
 		};
 
-		console.add("准备执行 " + commands.length + " 条命令");
-		binding.install.setText("执行自定义命令");
+		binding.install.setText("执行备份");
 		binding.install.setVisibility(View.VISIBLE);
 		binding.install.setOnClickListener(v -> {
 			binding.install.setEnabled(false);
-			console.add(">>> 开始执行硬编码命令 <<<");			
-			console.add("你知道吗 这个东西其实以前可以直接写txt的 不过我失败了 所以他只能拿来备份boot和ubootspl了");
-			shell.newJob().add(commands).to(console).submit(result -> {
-				if (result.isSuccess()) {
-					console.add(">>> 所有命令执行成功 <<<");
-				} else {
-					console.add(">>> 部分命令执行失败，退出码：" + result.getCode());
-					if (!result.getErr().isEmpty()) {
-						console.add("错误输出:");
-						for (String err : result.getErr()) console.add("  " + err);
-					}
-				}
-				binding.install.setEnabled(true);
-			});
+			console.add(">>> 开始备份 <<<");
+			// 使用同步执行以便捕获每一步的输出
+			for (String cmd : commands) {
+				console.add("> " + cmd);
+				Shell.Result result = shell.newJob().add(cmd).exec();
+				console.add("退出码: " + result.getCode());
+				for (String line : result.getOut()) console.add(line);
+			}
+			console.add(">>> 备份完成 <<<");
+			binding.install.setEnabled(true);
 		});
 	}
 	
