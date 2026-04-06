@@ -20,7 +20,7 @@ Modify the last byte of the frp partition to 1, then save it as `/sdcard/frp.img
 
 **Final Step**
 
-Now flash the new boot image with Magisk!
+After patching the boot image, flashing the new boot image with Magisk!
 
 **License**
 
