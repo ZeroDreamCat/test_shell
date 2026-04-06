@@ -1,22 +1,26 @@
-# ZakoFlash 
+**ZakoFlash**
 
-A tool which can read boot, recovery,header of mmcblk0,frp and so on.Also conclude a function which can flash frp to open OEM umlock settings on devices which hasn't settings application.
+A tool that can read boot, recovery, header of mmcblk0, frp, and so on. It also includes a function to flash the frp partition to enable OEM unlock settings on devices that do not have a settings application.
 
-## Usage
+**Usage**
 
-1. Download zip,unzip and install debug version.
+1. Download the zip, unzip it, and install the debug version.
+2. After that, click the button. This application will back up your boot partition and the first 8 MB of mmcblk0 to the /sdcard directory.
 
-2. After that,click the buttom,this application will backup your boot and 8m head of mmcblk0 to sdcard.
+For Allwinner devices, you can analyze your device using the 32 MB empty header at offset 0x2000, which usually contains the SPL file.
 
-for allwinner device,you can analysis your device through 32m empty header at 0x2000 offset which usually contains spl file.
+- **TOC0 header** is for secure boot, which has AVB. You must unlock the bootloader first!
+- **EGON header** is for normal boot, which usually does not have a bootloader lock.
 
-Toc0 header is secure boot which has avb,and you must unlock BOOTLOADER first!Egon is normal boot which usually doesn't has bootloader lock.
+**FRP Unlock**
 
-3. Modify the last byte of frp partition to 1. And put it in /sdcard/frp.img,click the bottom to flash it and now you can unlock bootloader on devices which doesn't has seetings application.
+Modify the last byte of the frp partition to 1, then save it as `/sdcard/frp.img`. Click the button to flash it. After that, you can unlock the bootloader on devices that do not have a settings application.
 
-4. Now,flash the new boot image with Magisk!
+**Final Step**
 
+Now flash the new boot image with Magisk!
 
-## License
+**License**
 
-GNU V3.0
+GNU General Public License v3.0 (GPLv3)
+
