@@ -137,18 +137,66 @@ public final class MainActivity extends Activity {
 	void installMagisk() {
 		String cmdFilePath = "/sdcard/my_commands.txt";
 
-		// 先检查文件是否存在（使用 root shell）
-		Shell.Result checkResult = shell.newJob().add("test -f " + cmdFilePath + " && echo EXISTS").exec();
-		if (!checkResult.getOut().contains("EXISTS")) {
+		// 先检查 shell 是否有效
+		if (shell == null) {
+			console.add("Shell 对象为 null，尚未初始化");
+			return;
+		}
+		console.add("Shell 状态: " + (shell.isRoot() ? "Root" : "Non-root"));
+
+		// 执行检查命令，并获取详细输出
+		String checkCmd = "test -f " + cmdFilePath + " && echo EXISTS || echo NOT_EXISTS";
+		Shell.Result checkResult = shell.newJob().add(checkCmd).exec();
+
+		// 输出详细信息
+		console.add("检查命令退出码: " + checkResult.getCode());
+		console.add("检查命令 stdout: " + checkResult.getOut());
+		console.add("检查命令 stderr: " + checkResult.getErr());
+
+		// 如果退出码不是 0，说明命令执行失败（可能是 shell 问题或文件不存在）
+		if (checkResult.getCode() != 0) {
+			console.add("检查命令执行失败，退出码非0");
+			// 继续打印 stderr 中的错误信息（如果有）
+			if (!checkResult.getErr().isEmpty()) {
+				for (String err : checkResult.getErr()) {
+					console.add("stderr: " + err);
+				}
+			}
+			return;
+		}
+
+		// 通过 stdout 判断文件是否存在
+		boolean exists = false;
+		for (String line : checkResult.getOut()) {
+			if (line.contains("EXISTS")) {
+				exists = true;
+				break;
+			}
+		}
+
+		if (!exists) {
 			console.add("命令文件不存在: " + cmdFilePath);
+			// 可选：尝试列出 /sdcard 目录内容以供调试
+			Shell.Result lsResult = shell.newJob().add("ls -la /sdcard/").exec();
+			console.add("/sdcard/ 目录内容:");
+			for (String line : lsResult.getOut()) {
+				console.add(line);
+			}
 			return;
 		}
 
 		// 读取文件内容，每行一条命令
 		Shell.Result readResult = shell.newJob().add("cat " + cmdFilePath).exec();
-		List<String> lines = readResult.getOut();
+		if (readResult.getCode() != 0) {
+			console.add("读取命令文件失败，退出码: " + readResult.getCode());
+			for (String err : readResult.getErr()) {
+				console.add("stderr: " + err);
+			}
+			return;
+		}
+
 		List<String> commands = new ArrayList<>();
-		for (String line : lines) {
+		for (String line : readResult.getOut()) {
 			line = line.trim();
 			if (!line.isEmpty() && !line.startsWith("#")) {
 				commands.add(line);
@@ -176,7 +224,7 @@ public final class MainActivity extends Activity {
 			});
 		});
 	}
-	
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
