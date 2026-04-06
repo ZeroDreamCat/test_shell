@@ -135,43 +135,34 @@ public final class MainActivity extends Activity {
 
 	@SuppressLint("SetTextI18n")
 	void installMagisk() {
-		if (shell == null || !shell.isRoot()) {
-			console.add("Shell 未就绪或非 root");
-			return;
-		}
+		if (shell == null || !shell.isRoot()) return;
 
-		// 先确认分区是否存在
-		Shell.Result check = shell.newJob().add("ls -l /dev/block/mmcblk0p3 2>&1").exec();
-		if (check.getCode() != 0) {
-			console.add("分区 /dev/block/mmcblk0p3 不存在，尝试查找 boot 分区...");
-			Shell.Result bootCheck = shell.newJob().add("ls -l /dev/block/by-name/boot 2>&1").exec();
-			console.add("by-name/boot: " + bootCheck.getOut());
-			return;
-		}
+		// 先诊断
+		console.add("诊断: 检查分区节点");
+		shell.newJob().add("ls -l /dev/block/mmcblk0p3 2>&1 || echo 'p3 not found'").to(console).submit();
+		shell.newJob().add("ls -l /dev/block/by-name/boot 2>&1").to(console).submit();
 
+		// 实际备份命令（带 2>&1）
 		String[] commands = {
 			"dd if=/dev/block/mmcblk0p3 of=/data/local/tmp/boot.img bs=4M 2>&1",
-			"dd if=/dev/block/mmcblk0 of=/data/local/tmp/mmcblk0_head_8M.bin bs=1M count=8 2>&1",
-			"ls -l /data/local/tmp/boot.img /data/local/tmp/mmcblk0_head_8M.bin 2>&1"
+			"dd if=/dev/block/mmcblk0 of=/data/local/tmp/mmcblk0_head_8M.bin bs=1M count=8 2>&1"
 		};
 
-		binding.install.setText("执行备份");
+		binding.install.setText("备份分区");
 		binding.install.setVisibility(View.VISIBLE);
 		binding.install.setOnClickListener(v -> {
 			binding.install.setEnabled(false);
 			console.add(">>> 开始备份 <<<");
-			// 使用同步执行以便捕获每一步的输出
 			for (String cmd : commands) {
 				console.add("> " + cmd);
-				Shell.Result result = shell.newJob().add(cmd).exec();
-				console.add("退出码: " + result.getCode());
-				for (String line : result.getOut()) console.add(line);
+				Shell.Result r = shell.newJob().add(cmd).exec();
+				console.add("退出码: " + r.getCode());
+				for (String line : r.getOut()) console.add(line);
 			}
 			console.add(">>> 备份完成 <<<");
 			binding.install.setEnabled(true);
 		});
 	}
-	
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
