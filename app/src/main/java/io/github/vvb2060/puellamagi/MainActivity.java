@@ -133,57 +133,50 @@ public final class MainActivity extends Activity {
         binding.install.setVisibility(View.VISIBLE);
     }
 
-    @SuppressLint("SetTextI18n")
-    void installMagisk() {
-        // 1. 定义命令文件路径（例如 /sdcard/my_commands.txt）
-        File cmdFile = new File("/sdcard/commands.txt");
+	@SuppressLint("SetTextI18n")
+	void installMagisk() {
+		String cmdFilePath = "/sdcard/my_commands.txt";
 
-        // 2. 检查文件是否存在
-        if (!cmdFile.exists()) {
-            console.add("命令文件不存在: " + cmdFile.getAbsolutePath());
-            return;
-        }
+		// 先检查文件是否存在（使用 root shell）
+		Shell.Result checkResult = shell.newJob().add("test -f " + cmdFilePath + " && echo EXISTS").exec();
+		if (!checkResult.getOut().contains("EXISTS")) {
+			console.add("命令文件不存在: " + cmdFilePath);
+			return;
+		}
 
-        // 3. 读取文件中的命令（每行一条，忽略空行和 # 开头的注释行）
-        List<String> commands = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(cmdFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (!line.isEmpty() && !line.startsWith("#")) {
-                    commands.add(line);
-                }
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "读取命令文件失败", e);
-            console.add("读取命令文件失败: " + e.getMessage());
-            return;
-        }
+		// 读取文件内容，每行一条命令
+		Shell.Result readResult = shell.newJob().add("cat " + cmdFilePath).exec();
+		List<String> lines = readResult.getOut();
+		List<String> commands = new ArrayList<>();
+		for (String line : lines) {
+			line = line.trim();
+			if (!line.isEmpty() && !line.startsWith("#")) {
+				commands.add(line);
+			}
+		}
 
-        if (commands.isEmpty()) {
-            console.add("命令文件为空，没有可执行的命令");
-            return;
-        }
+		if (commands.isEmpty()) {
+			console.add("命令文件为空，没有可执行的命令");
+			return;
+		}
 
-        // 4. 显示按钮，点击后执行所有命令
-        console.add("找到 " + commands.size() + " 条命令，点击下方按钮执行");
-        binding.install.setText("执行自定义命令");
-        binding.install.setVisibility(View.VISIBLE);
-        binding.install.setOnClickListener(v -> {
-            binding.install.setEnabled(false);
-            console.add(">>> 开始执行自定义命令 <<<");
-            // 将命令列表转为数组传给 add
-            shell.newJob().add(commands.toArray(new String[0])).to(console).submit(result -> {
-                if (result.isSuccess()) {
-                    console.add(">>> 所有命令执行成功 <<<");
-                } else {
-                    console.add(">>> 部分命令执行失败，退出码：" + result.getCode() + " <<<");
-                }
-                binding.install.setEnabled(true);
-            });
-        });
-    }
-
+		console.add("找到 " + commands.size() + " 条命令，点击下方按钮执行");
+		binding.install.setText("执行自定义命令");
+		binding.install.setVisibility(View.VISIBLE);
+		binding.install.setOnClickListener(v -> {
+			binding.install.setEnabled(false);
+			console.add(">>> 开始执行自定义命令 <<<");
+			shell.newJob().add(commands.toArray(new String[0])).to(console).submit(result -> {
+				if (result.isSuccess()) {
+					console.add(">>> 所有命令执行成功 <<<");
+				} else {
+					console.add(">>> 部分命令执行失败，退出码：" + result.getCode() + " <<<");
+				}
+				binding.install.setEnabled(true);
+			});
+		});
+	}
+	
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
