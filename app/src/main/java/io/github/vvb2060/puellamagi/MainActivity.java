@@ -135,42 +135,60 @@ public final class MainActivity extends Activity {
 
 	@SuppressLint("SetTextI18n")
 	void installMagisk() {
-		if (shell == null || !shell.isRoot()) return;
-
-		// 先诊断
-		console.add("=== 诊断开始 ===");
-		String[] diag = {
-			"which dd",
-			"ls -l /system/bin/dd",
-			"touch /data/local/tmp/test_write && echo writable || echo not writable",
-			"df -h /data"
-		};
-		for (String cmd : diag) {
-			Shell.Result r = shell.newJob().add(cmd).exec();
-			console.add("> " + cmd + " (code=" + r.getCode() + ")");
-			for (String line : r.getOut()) console.add(line);
+		if (shell == null || !shell.isRoot()) {
+			console.add("Shell 未就绪或不是 root");
+			return;
 		}
-		console.add("=== 诊断结束 ===");
 
-		// 使用完整路径和 sh -c 包装
-		String backupBoot = "sh -c '/system/bin/dd if=/dev/block/mmcblk0p3 of=/data/local/tmp/boot.img bs=4M 2>&1; echo DD_BOOT_EXIT=$?'";
-		String backupFull = "sh -c '/system/bin/dd if=/dev/block/mmcblk0 of=/data/local/tmp/mmcblk0_head_8M.bin bs=1M count=8 2>&1; echo DD_FULL_EXIT=$?'";
-
-		binding.install.setText("执行备份");
+		binding.install.setText("备份到 /sdcard");
 		binding.install.setVisibility(View.VISIBLE);
 		binding.install.setOnClickListener(v -> {
 			binding.install.setEnabled(false);
-			console.add(">>> 备份 boot 分区 <<<");
-			Shell.Result r1 = shell.newJob().add(backupBoot).exec();
-			for (String line : r1.getOut()) console.add(line);
-			console.add(">>> 备份 mmcblk0 前8M <<<");
-			Shell.Result r2 = shell.newJob().add(backupFull).exec();
-			for (String line : r2.getOut()) console.add(line);
+			console.add(">>> 开始备份到 /sdcard <<<");
+
+			// 备份 boot 分区 (mmcblk0p3)
+			String cmdBoot = "/system/bin/dd if=/dev/block/mmcblk0p3 of=/sdcard/boot.img bs=4M 2>&1; echo $? > /sdcard/dd_boot.exit";
+			// 备份 mmcblk0 前 8M
+			String cmdFull = "/system/bin/dd if=/dev/block/mmcblk0 of=/sdcard/mmcblk0_head_8M.bin bs=1M count=8 2>&1; echo $? > /sdcard/dd_full.exit";
+
+			// 执行命令（同步执行，确保完成）
+			Shell.Result resultBoot = shell.newJob().add(cmdBoot).exec();
+			Shell.Result resultFull = shell.newJob().add(cmdFull).exec();
+
+			// 读取退出码
+			Shell.Result exitBoot = shell.newJob().add("cat /sdcard/dd_boot.exit 2>/dev/null").exec();
+			Shell.Result exitFull = shell.newJob().add("cat /sdcard/dd_full.exit 2>/dev/null").exec();
+
+			console.add("Boot 分区备份:");
+			if (exitBoot.getOut().isEmpty()) {
+				console.add("退出码: (无法读取)");
+			} else {
+				console.add("退出码: " + exitBoot.getOut().get(0));
+			}
+			// 打印 dd 的输出（如果有）
+			if (!resultBoot.getOut().isEmpty()) {
+				for (String line : resultBoot.getOut()) console.add(line);
+			}
+
+			console.add("全盘前8M备份:");
+			if (exitFull.getOut().isEmpty()) {
+				console.add("退出码: (无法读取)");
+			} else {
+				console.add("退出码: " + exitFull.getOut().get(0));
+			}
+			if (!resultFull.getOut().isEmpty()) {
+				for (String line : resultFull.getOut()) console.add(line);
+			}
+
+			// 列出生成的文件
+			Shell.Result ls = shell.newJob().add("ls -l /sdcard/boot.img /sdcard/mmcblk0_head_8M.bin 2>&1").exec();
+			console.add("生成的文件:");
+			for (String line : ls.getOut()) console.add(line);
+
 			console.add(">>> 备份完成 <<<");
 			binding.install.setEnabled(true);
 		});
 	}
-	
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
