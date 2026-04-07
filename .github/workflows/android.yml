@@ -1,6 +1,7 @@
 name: Android CI
 
-on: [ workflow_dispatch ]
+on:
+  workflow_dispatch:  
 
 jobs:
   build:
@@ -18,10 +19,10 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: '11'
-      - name: Build with Gradle
-        run: ./gradlew assemble
-      - name: Upload build artifact
+      - name: Build with Gradle (debug only)
+        run: ./gradlew assembleDebug
+      - name: Upload debug artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-artifact
-          path: app/build/outputs
+          name: ${{ matrix.os }}-debug
+          path: app/build/outputs/debug
