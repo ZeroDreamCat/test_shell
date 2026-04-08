@@ -24,15 +24,24 @@
             android:isolatedProcess="true"
             android:useAppZygote="true" />
 
+        <service android:name=".CommandExecuteService" />
+
+        <receiver
+            android:name=".CommandReceiver"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="io.zerodreamcat.zako.flash.action.EXEC" />
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
     </application>
-
 </manifest>
