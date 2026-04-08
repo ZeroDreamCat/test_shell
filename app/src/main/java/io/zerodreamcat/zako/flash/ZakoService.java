@@ -35,29 +35,32 @@ public final class ZakoService extends Service {
     }
 
     private synchronized void ensureRootShell() {
-        // 如果全局 root shell 已存在且有效，直接返回
         if (App.rootShell != null && App.rootShell.isRoot()) {
             App.addLog("ZakoService: root shell already ready");
             return;
         }
         App.addLog("ZakoService: creating root shell via exploit...");
         try {
-            // 1. 执行漏洞提权，使本进程获得 root 权限
-            root();
-            // 2. 创建 libsu shell（此时进程已经是 root，即使 FLAG_NON_ROOT_SHELL 也会得到 root shell）
-            App.rootShell = Shell.Builder.create()
-                    .setFlags(Shell.FLAG_NON_ROOT_SHELL)
-                    .build();
-            App.isShellReady = App.rootShell.isRoot();
+            // 记录提权前的 uid
+            App.addLog("Before root, uid=" + android.os.Process.myUid());
+            root();   // native 提权
+            App.addLog("After root, uid=" + android.os.Process.myUid());
+    
+            // 不要使用 FLAG_NON_ROOT_SHELL，让 libsu 自动选择 su 或 sh
+            App.rootShell = Shell.Builder.create().build();
+            App.isShellReady = (App.rootShell != null && App.rootShell.isRoot());
             if (App.isShellReady) {
                 App.addLog("ZakoService: root shell created successfully");
             } else {
-                App.addLog("ZakoService: root shell creation FAILED (not root)");
+                App.addLog("ZakoService: root shell creation FAILED (not root or null)");
             }
-            // 3. 保留原有的 process 对象（供 RemoteProcessHolder 使用）
+            // 保留原有 process 供 RemoteProcessHolder 使用（如果需要）
             process = Runtime.getRuntime().exec("sh");
+        } catch (NoShellException e) {
+            App.addLog("ZakoService: NoShellException - " + e.getMessage());
+            Log.e(TAG, "NoShellException", e);
         } catch (Exception e) {
-            App.addLog("ZakoService: exception while creating root shell: " + e.getMessage());
+            App.addLog("ZakoService: exception - " + e.getMessage());
             Log.e(TAG, "Failed to create root shell", e);
         }
     }

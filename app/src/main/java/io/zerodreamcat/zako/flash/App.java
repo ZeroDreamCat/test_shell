@@ -29,6 +29,7 @@ public class App extends Application {
     }
 
     public static void addLog(String log) {
+        Log.d(TAG, log);
         synchronized (logCache) {
             logCache.add(log);
             while (logCache.size() > 500) logCache.remove(0);
