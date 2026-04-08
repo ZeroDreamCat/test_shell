@@ -24,8 +24,6 @@
             android:isolatedProcess="true"
             android:useAppZygote="true" />
 
-        <service android:name=".CommandExecuteService" />
-
         <receiver android:name=".CommandReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="io.zerodreamcat.zako.flash.action.EXEC" />
