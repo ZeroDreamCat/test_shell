@@ -35,6 +35,8 @@
             </intent-filter>
         </receiver>
 
+		<service android:name=".CommandExecuteService" android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
