@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
@@ -28,6 +29,7 @@ import io.zerodreamcat.zako.flash.databinding.ActivityMainBinding;
 public final class MainActivity extends Activity {
     private ActivityMainBinding binding;
     private final List<String> console = new AppendCallbackList();
+    private final Handler mainHandler = new Handler();
 
     private final ServiceConnection connection = new ServiceConnection() {
         @Override
@@ -37,8 +39,8 @@ public final class MainActivity extends Activity {
             // 不再自己创建 shell，直接使用 App.rootShell（由 ZakoService 保证）
             if (App.rootShell == null || !App.rootShell.isRoot()) {
                 console.add("等待 root shell 就绪...");
-                // 稍后重试（ZakoService 的 onBind 中会创建）
-                binding.postDelayed(() -> check(), 500);
+                // 使用 Handler 延迟检查
+                mainHandler.postDelayed(() -> check(), 500);
             } else {
                 check();
             }
