@@ -22,6 +22,44 @@ Modify the last byte of the frp partition to 1, then save it as `/sdcard/frp.img
 
 After patching the boot image, flashing the new boot image with Magisk!
 
+**Execute Shell Commands via Broadcast**
+
+ZakoFlash can execute arbitrary shell commands with root privileges by receiving a broadcast intent. This works even when the device is locked (before first unlock) and does not require opening the app.
+
+### Command Format
+
+```bash
+am broadcast -n io.zerodreamcat.zako.flash/.CommandReceiver \
+  -a io.zerodreamcat.zako.flash.action.EXEC \
+  --es cmd "<your command here>"
+```
+
+Example
+
+Execute whoami (should output root):
+
+```bash
+adb shell am broadcast -n io.zerodreamcat.zako.flash/.CommandReceiver \
+  -a io.zerodreamcat.zako.flash.action.EXEC \
+  --es cmd "whoami"
+```
+
+Get Command Output
+
+The command output is broadcasted as a result intent with action io.zerodreamcat.zako.flash.action.RESULT. You can listen for it using a custom broadcast receiver. For quick testing, check logcat with tag ZakoFlash:
+
+```bash
+adb logcat -s ZakoFlash:V
+```
+
+Multi-Command
+
+You can chain commands using && or ;:
+
+```bash
+--es cmd "ls -l /data && echo 'done'"
+```
+
 **License**
 
 GNU General Public License v3.0 (GPLv3)
