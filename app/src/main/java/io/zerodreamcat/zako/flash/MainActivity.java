@@ -121,7 +121,6 @@ public final class MainActivity extends Activity {
             console.add(getString(R.string.magiskd_running));
             killMagiskd();
         } else {
-            console.add(getString(R.string.magiskd_not_running));
             Backup();
         }
     }
