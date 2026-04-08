@@ -26,16 +26,13 @@
 
         <service android:name=".CommandExecuteService" />
 
-        <receiver
-            android:name=".CommandReceiver"
-            android:exported="true"
-            android:enabled="true">
+        <receiver android:name=".CommandReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="io.zerodreamcat.zako.flash.action.EXEC" />
             </intent-filter>
         </receiver>
-
-		<service android:name=".CommandExecuteService" android:exported="false" />
+        
+        <service android:name=".CommandExecuteService" android:exported="false" />
 
         <activity
             android:name=".MainActivity"
