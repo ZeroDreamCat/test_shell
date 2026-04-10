@@ -52,6 +52,7 @@ public final class MainActivity extends Activity {
                 shell = Shell.Builder.create()
                         .setFlags(Shell.FLAG_NON_ROOT_SHELL)
                         .build();
+				App.rootShell = shell;
             } catch (NoShellException e) {
                 Log.e(TAG, "Unable to create shell", e);
                 console.add("无法创建 shell: " + e.getMessage());
@@ -102,7 +103,7 @@ public final class MainActivity extends Activity {
     void cmd(String... cmds) {
         shell.newJob().add(cmds).to(console).submit(out -> {
             if (!out.isSuccess()) {
-                console.add(Arrays.toString(cmds) + getString(R.string.exec_failed));
+                // console.add(Arrays.toString(cmds) + getString(R.string.exec_failed));
             }
         });
     }
@@ -125,7 +126,6 @@ public final class MainActivity extends Activity {
             Backup();
         }
     }
-
 
     @SuppressLint("SetTextI18n")
     void killMagiskd() {
