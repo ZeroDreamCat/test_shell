@@ -7,6 +7,9 @@ import android.util.Log;
 
 import com.topjohnwu.superuser.Shell;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CommandExecuteService extends Service {
     private static final String TAG = "CmdExecService";
 
@@ -38,13 +41,14 @@ public class CommandExecuteService extends Service {
             return;
         }
 
-        Shell.Result result = App.rootShell.newJob().add(cmd).exec();
-        for (String line : result.getOut()) {
-            output.append(line).append("\n");
-        }
-        if (!result.getErr().isEmpty()) {
-            output.append("[stderr]\n");
-            for (String line : result.getErr()) {
+        List<String> stdout = new ArrayList<>();
+        // 关键：将 stderr 合并到 stdout
+        Shell.Result result = App.rootShell.newJob().add(cmd + " 2>&1").to(stdout).exec();
+
+        if (stdout.isEmpty() && result.getOut().isEmpty()) {
+            output.append("(no output)\n");
+        } else {
+            for (String line : stdout) {
                 output.append(line).append("\n");
             }
         }
