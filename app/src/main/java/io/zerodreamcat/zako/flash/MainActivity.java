@@ -150,25 +150,25 @@ public final class MainActivity extends Activity {
 			return;
 		}
 		
-        shell.newJob().add("mkdir -p /data/media/0/ZakoFlash").exec();
+        shell.newJob().add("mkdir -p /sdcard/ZakoFlash").exec();
 
-		binding.install.setText("备份到 /data/media/0/ZakoFlash");
+		binding.install.setText("备份到 /sdcard/ZakoFlash");
 		binding.install.setVisibility(View.VISIBLE);
 		binding.install.setOnClickListener(v -> {
 			binding.install.setEnabled(false);
-			console.add(">>> 开始备份到 /data/media/0/ZakoFlash <<<");
+			console.add(">>> 开始备份到 /sdcard/ZakoFlash <<<");
 
-			String cmdBoot = "/system/bin/dd if=/dev/block/by-name/boot of=/data/media/0/ZakoFlash/boot.img bs=4M 2>&1; echo $? > /data/media/0/ZakoFlash/dd_boot.exit";
-			String cmdFull = "/system/bin/dd if=/dev/block/mmcblk0 of=/data/media/0/ZakoFlash/mmcblk0_head_32M.bin bs=1M count=32 2>&1; echo $? > /data/media/0/ZakoFlash/dd_full.exit";
-			String cmdFrp = "/system/bin/dd if=/dev/block/by-name/frp of=/data/media/0/ZakoFlash/frp.img bs=4M 2>&1; echo $? > /data/media/0/ZakoFlash/dd_frp.exit";
+			String cmdBoot = "/system/bin/dd if=/dev/block/by-name/boot of=/sdcard/ZakoFlash/boot.img bs=4M 2>&1; echo $? > /sdcard/ZakoFlash/dd_boot.exit";
+			String cmdFull = "/system/bin/dd if=/dev/block/mmcblk0 of=/sdcard/ZakoFlash/mmcblk0_head_32M.bin bs=1M count=32 2>&1; echo $? > /sdcard/ZakoFlash/dd_full.exit";
+			String cmdFrp = "/system/bin/dd if=/dev/block/by-name/frp of=/sdcard/ZakoFlash/frp.img bs=4M 2>&1; echo $? > /sdcard/ZakoFlash/dd_frp.exit";
 			
 			Shell.Result resultBoot = shell.newJob().add(cmdBoot).exec();
 			Shell.Result resultFull = shell.newJob().add(cmdFull).exec();
 			Shell.Result resultFrp = shell.newJob().add(cmdFrp).exec();
 
-			Shell.Result exitBoot = shell.newJob().add("cat /data/media/0/ZakoFlash/dd_boot.exit 2>/dev/null").exec();
-			Shell.Result exitFull = shell.newJob().add("cat /data/media/0/ZakoFlash/dd_full.exit 2>/dev/null").exec();
-			Shell.Result exitFrp = shell.newJob().add("cat /data/media/0/ZakoFlash/dd_frp.exit 2>/dev/null").exec();
+			Shell.Result exitBoot = shell.newJob().add("cat /sdcard/ZakoFlash/dd_boot.exit 2>/dev/null").exec();
+			Shell.Result exitFull = shell.newJob().add("cat /sdcard/ZakoFlash/dd_full.exit 2>/dev/null").exec();
+			Shell.Result exitFrp = shell.newJob().add("cat /sdcard/ZakoFlash/dd_frp.exit 2>/dev/null").exec();
 
 			console.add("Boot 分区备份:");
 			if (exitBoot.getOut().isEmpty()) {
@@ -202,7 +202,7 @@ public final class MainActivity extends Activity {
 			}
 
 			// List files
-			Shell.Result ls = shell.newJob().add("ls -l /data/media/0/ZakoFlash/boot.img /data/media/0/ZakoFlash/mmcblk0_head_32M.bin /data/media/0/ZakoFlash/frp.img 2>&1").exec();
+			Shell.Result ls = shell.newJob().add("ls -l /sdcard/ZakoFlash/boot.img /sdcard/ZakoFlash/mmcblk0_head_32M.bin /sdcard/ZakoFlash/frp.img 2>&1").exec();
 			console.add("生成的文件:");
 			for (String line : ls.getOut()) console.add(line);
 
@@ -223,15 +223,15 @@ public final class MainActivity extends Activity {
 			if (!checkFrp1.isSuccess()) {
 				frpPath = "/dev/block/bootdevice/by-name/frp";
 			}
-			Shell.Result checkFrp = shell.newJob().add("ls -l /data/media/0/ZakoFlash/frp.img 2>/dev/null").exec();
+			Shell.Result checkFrp = shell.newJob().add("ls -l /sdcard/ZakoFlash/frp.img 2>/dev/null").exec();
 			if (checkFrp.getOut().isEmpty()) {
-				console.add("错误: /data/media/0/ZakoFlash/frp.img 不存在，请先备份 FRP 分区");
+				console.add("错误: /sdcard/ZakoFlash/frp.img 不存在，请先备份 FRP 分区");
 				binding.writeFrp.setEnabled(true);
 				return;
 			}
 
-			String cachePath = "/data/media/0/frp_mod.img";
-			Shell.Result copyResult = shell.newJob().add("cp /data/media/0/ZakoFlash/frp.img " + cachePath + " 2>&1").exec();
+			String cachePath = "/sdcard/frp_mod.img";
+			Shell.Result copyResult = shell.newJob().add("cp /sdcard/ZakoFlash/frp.img " + cachePath + " 2>&1").exec();
 			if (!copyResult.isSuccess()) {
 				console.add("错误: 复制 frp.img 到 cache 失败");
 				for (String line : copyResult.getOut()) console.add(line);
@@ -254,9 +254,9 @@ public final class MainActivity extends Activity {
 				binding.writeFrp.setEnabled(true);
 				return;
 			}
-			String cmdWriteFrp = "/system/bin/dd if=" + cachePath + " of=" + frpPath + " bs=4M 2>&1; echo $? > /data/media/0/ZakoFlash/dd_write_frp.exit";
+			String cmdWriteFrp = "/system/bin/dd if=" + cachePath + " of=" + frpPath + " bs=4M 2>&1; echo $? > /sdcard/ZakoFlash/dd_write_frp.exit";
 			Shell.Result resultWriteFrp = shell.newJob().add(cmdWriteFrp).exec();
-			Shell.Result exitWriteFrp = shell.newJob().add("cat /data/media/0/ZakoFlash/dd_write_frp.exit 2>/dev/null").exec();
+			Shell.Result exitWriteFrp = shell.newJob().add("cat /sdcard/ZakoFlash/dd_write_frp.exit 2>/dev/null").exec();
 
 			console.add("FRP 分区写入:");
 			if (exitWriteFrp.getOut().isEmpty()) {
