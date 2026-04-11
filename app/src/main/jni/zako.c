@@ -81,16 +81,6 @@ static void signal_handler(int sig) {
     }
 }
 
-// 新增：为 CommandExecuteService 注册 native 方法
-JNIEXPORT void JNICALL Java_io_zerodreamcat_zako_flash_CommandExecuteService_registerNative(JNIEnv *env, jclass clazz) {
-    JNINativeMethod method = {"root", "()V", (void*)root};
-    if ((*env)->RegisterNatives(env, clazz, &method, 1) < 0) {
-        LOGE("Failed to register root for CommandExecuteService");
-    } else {
-        LOGI("Registered root for CommandExecuteService");
-    }
-}
-
 jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     JNIEnv *env;
     jclass clazz;
