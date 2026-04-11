@@ -24,6 +24,7 @@ import com.topjohnwu.superuser.ShellUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.zip.ZipFile;
@@ -143,7 +144,7 @@ public final class MainActivity extends Activity {
         binding.writeFrp.setVisibility(View.GONE);
     }
 
-	@SuppressLint("SetTextI18n")
+	@SuppressLint({"SetTextI18n", "SdCardPath"})
 	void Backup() {
 		if (shell == null || !shell.isRoot()) {
 			console.add("Shell 未就绪或不是 root");
@@ -158,126 +159,105 @@ public final class MainActivity extends Activity {
 			binding.install.setEnabled(false);
 			console.add(">>> 开始备份到 /sdcard/ZakoFlash <<<");
 
-			String cmdBoot = "/system/bin/dd if=/dev/block/by-name/boot of=/sdcard/ZakoFlash/boot.img bs=4M 2>&1; echo $? > /sdcard/ZakoFlash/dd_boot.exit";
-			String cmdFull = "/system/bin/dd if=/dev/block/mmcblk0 of=/sdcard/ZakoFlash/mmcblk0_head_32M.bin bs=1M count=32 2>&1; echo $? > /sdcard/ZakoFlash/dd_full.exit";
-			String cmdFrp = "/system/bin/dd if=/dev/block/by-name/frp of=/sdcard/ZakoFlash/frp.img bs=4M 2>&1; echo $? > /sdcard/ZakoFlash/dd_frp.exit";
+			String cmdBoot = "/system/bin/dd if=/dev/block/by-name/boot of=/sdcard/ZakoFlash/boot.img bs=4M 2>&1";
+			String cmdFull = "/system/bin/dd if=/dev/block/mmcblk0 of=/sdcard/ZakoFlash/mmcblk0_head_32M.bin bs=1M count=32 2>&1";
+			String cmdFrp = "/system/bin/dd if=/dev/block/by-name/frp of=/sdcard/ZakoFlash/frp.img bs=4M 2>&1";
 			
 			Shell.Result resultBoot = shell.newJob().add(cmdBoot).exec();
 			Shell.Result resultFull = shell.newJob().add(cmdFull).exec();
 			Shell.Result resultFrp = shell.newJob().add(cmdFrp).exec();
 
-			Shell.Result exitBoot = shell.newJob().add("cat /sdcard/ZakoFlash/dd_boot.exit 2>/dev/null").exec();
-			Shell.Result exitFull = shell.newJob().add("cat /sdcard/ZakoFlash/dd_full.exit 2>/dev/null").exec();
-			Shell.Result exitFrp = shell.newJob().add("cat /sdcard/ZakoFlash/dd_frp.exit 2>/dev/null").exec();
+            String exitBoot = String.valueOf(resultBoot.getCode());
+            String exitFull = String.valueOf(resultFull.getCode());
+            String exitFrp = String.valueOf(resultFrp.getCode());
+			//Shell.Result exitBoot = shell.newJob().add("cat /sdcard/ZakoFlash/dd_boot.exit").exec();
+			//Shell.Result exitFull = shell.newJob().add("cat /sdcard/ZakoFlash/dd_full.exit 2>/dev/null").exec();
+			//Shell.Result exitFrp = shell.newJob().add("cat /sdcard/ZakoFlash/dd_frp.exit 2>/dev/null").exec();
 
 			console.add("Boot 分区备份:");
-			if (exitBoot.getOut().isEmpty()) {
-				console.add("退出码: (无法读取)");
-			} else {
-				console.add("退出码: " + exitBoot.getOut().get(0));
-			}
-			// Print output of dd
+            console.add("退出码: " + exitBoot);
+            // Print output of dd
 			if (!resultBoot.getOut().isEmpty()) {
-				for (String line : resultBoot.getOut()) console.add(line);
+                console.addAll(resultBoot.getOut());
 			}
 
 			console.add("全盘前32M备份:");
-			if (exitFull.getOut().isEmpty()) {
-				console.add("退出码: (无法读取)");
-			} else {
-				console.add("退出码: " + exitFull.getOut().get(0));
-			}
-			if (!resultFull.getOut().isEmpty()) {
-				for (String line : resultFull.getOut()) console.add(line);
+            console.add("退出码: " + exitFull);
+            if (!resultFull.getOut().isEmpty()) {
+                console.addAll(resultFull.getOut());
 			}
 
 			console.add("FRP 分区备份:");
-			if (exitFrp.getOut().isEmpty()) {
-				console.add("退出码: (无法读取)");
-			} else {
-				console.add("退出码: " + exitFrp.getOut().get(0));
-			}
-			if (!resultFrp.getOut().isEmpty()) {
-				for (String line : resultFrp.getOut()) console.add(line);
+            console.add("退出码: " + exitFrp);
+            if (!resultFrp.getOut().isEmpty()) {
+                console.addAll(resultFrp.getOut());
 			}
 
-			// List files
 			Shell.Result ls = shell.newJob().add("ls -l /sdcard/ZakoFlash/boot.img /sdcard/ZakoFlash/mmcblk0_head_32M.bin /sdcard/ZakoFlash/frp.img 2>&1").exec();
 			console.add("生成的文件:");
-			for (String line : ls.getOut()) console.add(line);
+            console.addAll(ls.getOut());
 
 			console.add(">>> 备份完成 <<<");
 			binding.install.setEnabled(true);
 		});
 
-		// 设置写入 FRP 按钮
 		binding.writeFrp.setText("写入 FRP 分区");
 		binding.writeFrp.setVisibility(View.VISIBLE);
 		binding.writeFrp.setOnClickListener(v -> {
-			binding.writeFrp.setEnabled(false);
-			console.add(">>> 开始写入 FRP 分区 <<<");
+            binding.writeFrp.setText("写入 FRP 分区");
+            binding.writeFrp.setVisibility(View.VISIBLE);
+            binding.writeFrp.setOnClickListener(w -> {
+                binding.writeFrp.setEnabled(false);
+                console.add(">>> 开始写入 FRP 分区 <<<");
 
-			// 确定 FRP 分区路径
-			String frpPath = "/dev/block/by-name/frp";
-			Shell.Result checkFrp1 = shell.newJob().add("ls " + frpPath + " 2>/dev/null").exec();
-			if (!checkFrp1.isSuccess()) {
-				frpPath = "/dev/block/bootdevice/by-name/frp";
-			}
-			Shell.Result checkFrp = shell.newJob().add("ls -l /sdcard/ZakoFlash/frp.img 2>/dev/null").exec();
-			if (checkFrp.getOut().isEmpty()) {
-				console.add("错误: /sdcard/ZakoFlash/frp.img 不存在，请先备份 FRP 分区");
-				binding.writeFrp.setEnabled(true);
-				return;
-			}
+                String frpPath = "/dev/block/by-name/frp";
+                Shell.Result checkFrp1 = shell.newJob().add("ls " + frpPath + " 2>/dev/null").exec();
+                if (!checkFrp1.isSuccess()) {
+                    frpPath = "/dev/block/bootdevice/by-name/frp";
+                }
 
-			String cachePath = "/sdcard/frp_mod.img";
-			Shell.Result copyResult = shell.newJob().add("cp /sdcard/ZakoFlash/frp.img " + cachePath + " 2>&1").exec();
-			if (!copyResult.isSuccess()) {
-				console.add("错误: 复制 frp.img 到 cache 失败");
-				for (String line : copyResult.getOut()) console.add(line);
-				binding.writeFrp.setEnabled(true);
-				return;
-			}
+                String backupImg = "/sdcard/ZakoFlash/frp.img";
+                Shell.Result checkImg = shell.newJob().add("test -f " + backupImg + " && echo 'exists'").exec();
+                if (checkImg.getCode() != 0) {
+                    console.add("错误: " + backupImg + " 不存在，请先执行备份");
+                    binding.writeFrp.setEnabled(true);
+                    return;
+                }
 
-			Shell.Result sizeResult = shell.newJob().add("stat -c%s " + cachePath + " 2>/dev/null").exec();
-			if (sizeResult.getOut().isEmpty()) {
-				console.add("错误: 无法获取文件大小");
-				binding.writeFrp.setEnabled(true);
-				return;
-			}
-			long size = Long.parseLong(sizeResult.getOut().get(0).trim());
-			long seekPos = size - 1;
-			Shell.Result modifyResult = shell.newJob().add("printf '\\x01' | dd of=" + cachePath + " bs=1 count=1 seek=" + seekPos + " conv=notrunc 2>&1").exec();
-			if (!modifyResult.isSuccess()) {
-				console.add("错误: 修改 frp 最后一位失败");
-				for (String line : modifyResult.getOut()) console.add(line);
-				binding.writeFrp.setEnabled(true);
-				return;
-			}
-			String cmdWriteFrp = "/system/bin/dd if=" + cachePath + " of=" + frpPath + " bs=4M 2>&1; echo $? > /sdcard/ZakoFlash/dd_write_frp.exit";
-			Shell.Result resultWriteFrp = shell.newJob().add(cmdWriteFrp).exec();
-			Shell.Result exitWriteFrp = shell.newJob().add("cat /sdcard/ZakoFlash/dd_write_frp.exit 2>/dev/null").exec();
+                String cachePath = "/sdcard/ZakoFlash/frp_mod.img";
+                String statFile = "/sdcard/ZakoFlash/stat.us";
 
-			console.add("FRP 分区写入:");
-			if (exitWriteFrp.getOut().isEmpty()) {
-				console.add("退出码: (无法读取)");
-			} else {
-				console.add("退出码: " + exitWriteFrp.getOut().get(0));
-			}
-			if (!resultWriteFrp.getOut().isEmpty()) {
-				for (String line : resultWriteFrp.getOut()) console.add(line);
-			}
+                String shellScript =
+                        "cp " + backupImg + " " + cachePath + " 2>&1 || { echo '复制镜像失败'; exit 1; };" +
+                                "stat -c%s " + cachePath + " > " + statFile + " 2>&1 || { echo '获取文件大小失败'; exit 1; };" +
+                                "size=$(cat " + statFile + ");" +
+                                "if [ -z \"$size\" ]; then echo '文件大小为空'; exit 1; fi;" +
+                                "lastByteOffset=$((size - 1));" +
+                                "lastByte=$(dd if=" + cachePath + " bs=1 count=1 skip=$lastByteOffset 2>/dev/null | od -An -tx1 | tr -d ' \\n');" +
+                                "if [ \"$lastByte\" = \"01\" ]; then" +
+                                "    echo 'FRP 镜像最后一位已经是 0x01，无需修改，停止写入';" +
+                                "    rm -f " + cachePath + ";" +
+                                "    exit 2;" +
+                                "fi;" +
+                                "printf '\\x01' | dd of=" + cachePath + " bs=1 count=1 seek=$lastByteOffset conv=notrunc 2>&1 || { echo '修改镜像最后一位失败'; exit 1; };" +
+                                "dd if=" + cachePath + " of=" + frpPath + " bs=4M 2>&1 || { echo '写入 FRP 分区失败'; exit 1; };" +
+                                "rm -f " + cachePath + " && echo '写入成功，已清理缓存'";
 
-			Shell.Result cleanResult = shell.newJob().add("rm " + cachePath + " 2>&1").exec();
-			if (!cleanResult.isSuccess()) {
-				console.add("警告: 清理 cache 失败");
-				for (String line : cleanResult.getOut()) console.add(line);
-			} else {
-				console.add("已清理 cache 中的镜像");
-			}
-
-			console.add(">>> 写入完成 <<<");
-			binding.writeFrp.setEnabled(true);
+                shell.newJob()
+                        .add("sh -c", shellScript)
+                        .to(console)
+                        .submit(result -> {
+                            int code = result.getCode();
+                            if (code == 0) {
+                                console.add(">>> 写入完成 <<<");
+                            } else if (code == 2) {
+                                console.add(">>> FRP 已修改过，跳过修改<<<");
+                            } else {
+                                console.add(">>> 写入失败，请检查上方错误信息 <<<");
+                            }
+                            binding.writeFrp.setEnabled(true);
+                        });
+            });
 		});
 	}
     protected void onCreate(Bundle savedInstanceState) {
