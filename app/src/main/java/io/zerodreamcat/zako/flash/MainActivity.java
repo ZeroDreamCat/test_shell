@@ -170,25 +170,21 @@ public final class MainActivity extends Activity {
             String exitBoot = String.valueOf(resultBoot.getCode());
             String exitFull = String.valueOf(resultFull.getCode());
             String exitFrp = String.valueOf(resultFrp.getCode());
-			//Shell.Result exitBoot = shell.newJob().add("cat /sdcard/ZakoFlash/dd_boot.exit").exec();
-			//Shell.Result exitFull = shell.newJob().add("cat /sdcard/ZakoFlash/dd_full.exit 2>/dev/null").exec();
-			//Shell.Result exitFrp = shell.newJob().add("cat /sdcard/ZakoFlash/dd_frp.exit 2>/dev/null").exec();
 
 			console.add("Boot 分区备份:");
-            console.add("退出码: " + exitBoot);
-            // Print output of dd
+            console.add("exit code: " + exitBoot);
 			if (!resultBoot.getOut().isEmpty()) {
                 console.addAll(resultBoot.getOut());
 			}
 
 			console.add("mmcblk0前32M备份:");
-            console.add("退出码: " + exitFull);
+            console.add("exit code: " + exitFull);
             if (!resultFull.getOut().isEmpty()) {
                 console.addAll(resultFull.getOut());
 			}
 
 			console.add("FRP 分区备份:");
-            console.add("退出码: " + exitFrp);
+            console.add("exit code: " + exitFrp);
             if (!resultFrp.getOut().isEmpty()) {
                 console.addAll(resultFrp.getOut());
 			}
