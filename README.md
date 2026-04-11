@@ -1,13 +1,29 @@
 # ZakoFlash
 
-A tool that can read boot, header of mmcblk0, frp, and so on. It also includes a function to flash the frp partition to enable OEM unlock settings on devices that do not have a settings application.
+Privilege Escalation PoC when seccomp is disabled for Android 10+ with some tools.
 
-However,you must put your device in SELinux permissive mode.
+### Features
 
-**Usage**
+Backup the first 32MB of mmcblk0 and the frp, boot partitions
 
-1. Download the zip, unzip it, and install the debug version.
-2. After that, click the button. This application will back up your boot partition and the first 32 MB of mmcblk0 to the /sdcard directory.
+One-click unlock frp
+
+* You must put your device in SELinux permissive mode before using.
+
+### Build
+
+```bash
+git clone https://github.com/ZeroDreamCat/ZakoFlash.git
+# On your device
+adb shell setenforce 0
+./gradlew :app:iR
+# Or build in youre Android Studio
+```
+
+### Usage
+
+1. Install and run ZakoFlash.
+2. After that, click the button. This application will back up your boot partition and the first 32 MB of mmcblk0 to the /sdcard/ZakoFlash directory.
 
 For Allwinner devices, you can analyze your device by using the 32 MB empty header at offset 0x2000, which usually contains the SPL file.
 
@@ -16,7 +32,7 @@ For Allwinner devices, you can analyze your device by using the 32 MB empty head
 
 **FRP Unlock**
 
-Modify the last byte of the frp partition to 1, then save it as `/sdcard/frp.img`. Click the button to flash it. After that, you can unlock the bootloader on devices that do not have a settings application.
+Modify the last byte of the frp partition to 1, then save it as `/sdcard/ZakoFlash/frp_mod.img`. Click the button to flash it. After that, you can unlock the bootloader on devices that do not have a settings application.
 
 **Final Step**
 
@@ -57,8 +73,3 @@ You can chain commands using && or ;:
 ```bash
 --es cmd "ls -l /data && echo 'done'"
 ```
-
-**License**
-
-GNU General Public License v3.0 (GPLv3)
-
