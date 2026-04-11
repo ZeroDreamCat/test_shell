@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ windows-latest ]
+        os: [ ubuntu-latest ]
 
     steps:
       - name: Check out
@@ -24,7 +24,7 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > ${{ runner.temp }}/my-release-key.jks
+          echo "$KEYSTORE_BASE64" | base64 -d > ${{ runner.temp }}/sr.jks
         shell: bash
 
       - name: Set signing environment variables
